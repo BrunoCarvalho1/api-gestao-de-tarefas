@@ -2,9 +2,9 @@ package api_gestao_de_tarefas.service;
 
 import api_gestao_de_tarefas.dto.auth.RegisterRequestDTO;
 import api_gestao_de_tarefas.entity.User;
+import api_gestao_de_tarefas.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import api_gestao_de_tarefas.repository.UserRepository;
 
 @Service
 public class AuthService {
@@ -17,7 +17,7 @@ public class AuthService {
    }
 
    public User register(RegisterRequestDTO dto) {
-      if(userRepository.existsByUsername(dto.getUsername())){
+      if (userRepository.existsByUsername(dto.getUsername())) {
          throw new RuntimeException("Usuário já existe!");
       }
       User user = new User();

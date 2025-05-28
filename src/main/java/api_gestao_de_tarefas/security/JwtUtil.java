@@ -4,99 +4,74 @@ import api_gestao_de_tarefas.entity.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value; // Para injetar de application.properties
+import jakarta.annotation.PostConstruct;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import jakarta.annotation.PostConstruct; // Para inicializar a chave
 import java.util.Base64;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret.base64}")
-    private String jwtSecretBase64;
+   // Sua chave original, que é forte o suficiente para HS384 ou HS256
+   private static final String MY_EXISTING_BASE64_KEY = "TmcxWlZ1elhyZnR0bkdRZUxOZndwZ0lQWjZJb1YxWjJNZ2NObDhaY3ByN2xMMnh2M3I3PQ==";
+   private SecretKey secretKeyInstance;
 
-    private SecretKey secretKeyInstance;
+   @PostConstruct
+   public void init() {
+      byte[] keyBytes = Base64.getDecoder().decode(MY_EXISTING_BASE64_KEY);
+      this.secretKeyInstance = Keys.hmacShaKeyFor(keyBytes);
+      // Verificação opcional de tamanho para o algoritmo escolhido
+      // Para HS384, precisamos de pelo menos 48 bytes. Sua chave tem 51 bytes.
+      if (keyBytes.length * 8 < 384 && SignatureAlgorithm.HS384.getMinKeyLength() > keyBytes.length * 8) {
+         System.err.println("Aviso: Chave pode ser curta para o algoritmo escolhido se não for HS384/HS256.");
+      }
+      System.out.println("Chave JWT inicializada para uso com HS384 (ou HS256).");
+   }
 
-    @PostConstruct
-    public void init() {
-        try {
-            // Adicione esta linha para depuração:
-            System.out.println("DEBUG: Valor carregado para jwt.secret.base64: '" + jwtSecretBase64 + "'");
+   public String gerarToken(User user) {
+      return Jwts.builder()
+              .setSubject(user.getUsername())
+              .claim("email", user.getEmail())
+              .setIssuedAt(new Date())
+              .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 horas
+              // Use HS384 ou HS256 aqui  <-- Você escolheu HS256
+              .signWith(this.secretKeyInstance, SignatureAlgorithm.HS256) // CORRETO para HS256
+              .compact();
+   }
 
-            if (jwtSecretBase64 == null || jwtSecretBase64.trim().isEmpty()) {
-                throw new IllegalArgumentException("A propriedade 'jwt.secret.base64' não está configurada ou está vazia no arquivo de propriedades.");
-            }
-            byte[] keyBytes = Base64.getDecoder().decode(jwtSecretBase64);
-            if (keyBytes.length < 64) {
-                throw new IllegalArgumentException(
-                        String.format("A chave JWT configurada ('jwt.secret.base64') é muito curta para HS512. Esperado: >= 64 bytes, Obtido: %d bytes. Verifique sua propriedade.", keyBytes.length)
-                );
-            }
-            this.secretKeyInstance = Keys.hmacShaKeyFor(keyBytes);
-            System.out.println("Chave JWT inicializada com sucesso para HS512.");
-        } catch (IllegalArgumentException e) {
-            System.err.println("FALHA CRÍTICA AO INICIALIZAR A CHAVE JWT: " + e.getMessage());
-            throw new RuntimeException("Erro crítico ao inicializar a chave JWT. A aplicação não pode continuar de forma segura. Causa: " + e.getMessage(), e);
-        }
-    }
+   public String extrairUsername(String token) {
+      return Jwts.parserBuilder()
+              .setSigningKey(this.secretKeyInstance)
+              .build()
+              .parseClaimsJws(token)
+              .getBody()
+              .getSubject();
+   }
 
-    public String gerarToken(User user) {
-        if (this.secretKeyInstance == null) {
-            throw new IllegalStateException("A chave secreta JWT (secretKeyInstance) não foi inicializada. Verifique a configuração 'jwt.secret.base64'.");
-        }
-        return Jwts.builder()
-                .setSubject(user.getUsername())
-                .claim("email", user.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 horas
-                .signWith(this.secretKeyInstance, SignatureAlgorithm.HS512)
-                .compact();
-    }
+   private boolean isTokenExpirado(String token) {
+      try {
+         return Jwts.parserBuilder()
+                 .setSigningKey(this.secretKeyInstance)
+                 .build()
+                 .parseClaimsJws(token)
+                 .getBody()
+                 .getExpiration()
+                 .before(new Date());
+      } catch (io.jsonwebtoken.ExpiredJwtException e) {
+         return true;
+      }
+   }
 
-    public String extrairUsername(String token) {
-        if(this.secretKeyInstance == null) {
-            throw new IllegalStateException("A chave secreta JWT (secretKeyInstance) não foi inicializada. Verifique a configuração 'jwt.secret.base64'.");
-        }
-        return Jwts.parserBuilder()
-                .setSigningKey(this.secretKeyInstance)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-    }
-
-    private boolean isTokenExpirado(String token) {
-        if (this.secretKeyInstance == null) {
-            throw new IllegalStateException("A chave secreta JWT (secretKeyInstance) não foi inicializada.");
-        }
-        try {
-            return Jwts.parserBuilder()
-                    .setSigningKey(this.secretKeyInstance)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getExpiration()
-                    .before(new Date());
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            return true;
-        }
-    }
-
-    public boolean validateToken(String token, UserDetails userDetails) {
-        if (this.secretKeyInstance == null) {
-            System.err.println("Tentativa de validar token, mas a chave secreta JWT (secretKeyInstance) não foi inicializada.");
-            return false;
-        }
-        try {
-            final String username = extrairUsername(token);
-            return (username != null && username.equals(userDetails.getUsername()) && !isTokenExpirado(token));
-        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
-            System.err.println("Erro ao validar token: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-            return false;
-        }
-    }
+   public boolean validateToken(String token, UserDetails userDetails) {
+      try {
+         final String username = extrairUsername(token);
+         return (username != null && username.equals(userDetails.getUsername()) && !isTokenExpirado(token));
+      } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
+         System.err.println("Erro ao validar token: " + e.getMessage());
+         return false;
+      }
+   }
 }

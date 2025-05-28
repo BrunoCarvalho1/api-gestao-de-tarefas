@@ -17,37 +17,37 @@ import java.io.IOException;
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+   @Autowired
+   private JwtUtil jwtUtil;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+   @Autowired
+   private UserDetailsService userDetailsService;
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
+   @Override
+   protected void doFilterInternal(HttpServletRequest request,
+                                   HttpServletResponse response,
+                                   FilterChain chain) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+      final String authHeader = request.getHeader("Authorization");
 
-        String username = null;
-        String jwt = null;
+      String username = null;
+      String jwt = null;
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            jwt = authHeader.substring(7);
-            username = jwtUtil.extrairUsername(jwt);
-        }
+      if (authHeader != null && authHeader.startsWith("Bearer ")) {
+         jwt = authHeader.substring(7);
+         username = jwtUtil.extrairUsername(jwt);
+      }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+      if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        }
+         if (jwtUtil.validateToken(jwt, userDetails)) {
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+         }
+      }
 
-        chain.doFilter(request, response);
-    }
+      chain.doFilter(request, response);
+   }
 }
