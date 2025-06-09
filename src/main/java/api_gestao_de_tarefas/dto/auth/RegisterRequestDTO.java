@@ -37,4 +37,8 @@ public class RegisterRequestDTO {
    public void setPassword(String password) {
       this.password = password;
    }
+
+   public Object role() {
+      return null;
+   }
 }

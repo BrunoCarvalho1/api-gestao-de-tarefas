@@ -17,12 +17,12 @@ public class ProjectController {
    @Autowired
    private ProjectRepository projectRepository;
 
-   @PostMapping
+   @PostMapping("/create")
    public Project createProject(@RequestBody Project project) {
       return projectRepository.save(project);
    }
 
-   @GetMapping
+   @GetMapping("/viewall")
    public List<Project> getAllProjects() {
       return projectRepository.findAll();
    }
