@@ -14,6 +14,17 @@ public class RegisterRequestDTO {
 
    private String email;
 
+   @NotBlank(message = "A role é obrigatória")
+   private String role;
+
+   public String getRole() {
+      return role;
+   }
+
+   public void setRole(String role) {
+      this.role = role;
+   }
+
    public String getEmail() {
       return email;
    }
@@ -38,7 +49,4 @@ public class RegisterRequestDTO {
       this.password = password;
    }
 
-   public Object role() {
-      return null;
-   }
 }

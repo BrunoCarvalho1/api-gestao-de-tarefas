@@ -4,6 +4,7 @@ import api_gestao_de_tarefas.security.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -33,17 +34,16 @@ public class SecurityConfig {
 
    @Bean
    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-      http
+      return http
               .csrf(csrf -> csrf.disable())
               .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
               .authorizeHttpRequests(auth -> auth
-                      .requestMatchers("/api/auth/login").permitAll()
-                      .requestMatchers("/api/auth/register").permitAll()
+                      .requestMatchers(HttpMethod.POST,"/auth/login").permitAll()
+                      .requestMatchers(HttpMethod.POST,"/auth/register").permitAll()
                       .requestMatchers("/api/projects/**").hasRole("ADMIN")
                       .anyRequest().authenticated()
               )
               .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
               .build();
-      return null;
    }
 }
