@@ -24,19 +24,16 @@ public class User implements UserDetails{
    @GeneratedValue(strategy = GenerationType.IDENTITY)
    private Long id;
 
-   @Column(nullable = false, unique = true)
    private String username;
-
-   @Column(nullable = false)
    private String password;
-
-   @Column(nullable = false, unique = true)
    private String email;
-
-   @Column(nullable = false)
    private UserRole role;
 
-   public User(String username, String encryptedPassword, Object role) {
+   public User(String username, String password, String email, UserRole role) {
+      this.username = username;
+      this.password = password;
+      this.role = role;
+      this.email = email;
    }
    // Getters e setters
 

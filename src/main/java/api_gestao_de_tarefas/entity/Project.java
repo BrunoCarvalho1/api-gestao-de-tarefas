@@ -1,5 +1,6 @@
 package api_gestao_de_tarefas.entity;
 
+import api_gestao_de_tarefas.entity.User.User;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -14,6 +15,10 @@ public class Project {
 
    @Column(nullable = false)
    private String name;
+
+   @ManyToOne // Define a relação: Muitos Projetos para Um Usuário
+   @JoinColumn(name = "owner_id", nullable = false) // Define a coluna da chave estrangeira no banco
+   private User owner;
 
    // Relacionamento com tasks
    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -43,5 +48,9 @@ public class Project {
 
    public void setTasks(List<Task> tasks) {
       this.tasks = tasks;
+   }
+
+   public void setOwner(User owner) {
+      this.owner = owner;
    }
 }

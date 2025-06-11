@@ -4,6 +4,7 @@ import api_gestao_de_tarefas.dto.auth.LoginRequestDTO;
 import api_gestao_de_tarefas.dto.auth.RegisterRequestDTO;
 import api_gestao_de_tarefas.entity.User.LoginResponseDTO;
 import api_gestao_de_tarefas.entity.User.User;
+import api_gestao_de_tarefas.entity.User.UserRole;
 import api_gestao_de_tarefas.repository.UserRepository;
 import api_gestao_de_tarefas.service.JwtService;
 import jakarta.validation.Valid;
@@ -42,13 +43,16 @@ public class AuthController {
 
    @PostMapping("/register")
    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequestDTO dto) {
-      if(this.repository.findByUsername(dto.getUsername()) != null) return ResponseEntity.badRequest().build();
+      if(this.repository.findByUsername(dto.getUsername()) != null){
+         return ResponseEntity.badRequest().body("Username já existe.");
+      }
 
       String encryptedPassword = new BCryptPasswordEncoder().encode(dto.getPassword());
-      User newUser = new User(dto.getUsername(), encryptedPassword, dto.getRole());
+
+      UserRole roleEnum = UserRole.valueOf(dto.getRole().toUpperCase());
+      User newUser = new User(dto.getUsername(), encryptedPassword, dto.getEmail(), roleEnum);
 
       this.repository.save(newUser);
-
       return ResponseEntity.ok().build();
    }
 }

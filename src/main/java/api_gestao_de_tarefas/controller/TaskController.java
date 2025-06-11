@@ -22,9 +22,8 @@ public class TaskController {
    private ProjectRepository projectRepository;
 
    // Criar nova tarefa associada a um projeto
-   @PostMapping
+   @PostMapping("/create")
    public ResponseEntity<?> createTask(@RequestBody Task task) {
-      // Verifica se o projeto existe antes de salvar a tarefa
       Optional<Project> projectOpt = projectRepository.findById(task.getProject().getId());
       if (projectOpt.isEmpty()) {
          return ResponseEntity.badRequest().body("Projeto não encontrado");
@@ -36,7 +35,7 @@ public class TaskController {
    }
 
    // Buscar todas as tarefas
-   @GetMapping
+   @GetMapping("viewAll")
    public List<Task> getAllTasks() {
       return taskRepository.findAll();
    }

@@ -3,7 +3,6 @@ package api_gestao_de_tarefas.entity.User;
 public enum UserRole {
 
    ADMIN("admin"),
-
    USER("user");
 
    private String role;

@@ -1,9 +1,18 @@
 package api_gestao_de_tarefas.controller;
 
+import api_gestao_de_tarefas.dto.project.ProjectDTO;
 import api_gestao_de_tarefas.entity.Project;
+import api_gestao_de_tarefas.dto.task.TaskDTO;
+import api_gestao_de_tarefas.entity.Task;
+import api_gestao_de_tarefas.entity.User.User;
 import api_gestao_de_tarefas.repository.ProjectRepository;
+import api_gestao_de_tarefas.repository.TaskRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,9 +26,21 @@ public class ProjectController {
    @Autowired
    private ProjectRepository projectRepository;
 
+   @Autowired
+   private TaskRepository taskRepository;
+
    @PostMapping("/create")
-   public Project createProject(@RequestBody Project project) {
-      return projectRepository.save(project);
+   public ResponseEntity<Project> createProject(@RequestBody ProjectDTO projectDTO) {
+
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      User currentUser = (User) authentication.getPrincipal();
+
+      Project newProject = new Project();
+      newProject.setName(projectDTO.getName());
+      newProject.setOwner(currentUser);
+
+      Project savedProject = projectRepository.save(newProject);
+      return ResponseEntity.ok(savedProject);
    }
 
    @GetMapping("/viewall")
@@ -41,5 +62,31 @@ public class ProjectController {
          return ResponseEntity.noContent().build();
       }
       return ResponseEntity.notFound().build();
+   }
+
+   @PostMapping("/{projectId}/tasks")
+   public ResponseEntity<?> createTaskForProject(@PathVariable Long projectId, @RequestBody @Valid TaskDTO taskDTO, Authentication authentication){
+      Optional<Project> optionalProject = projectRepository.findById(projectId);
+      if(optionalProject.isEmpty()){
+         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Projeto não encontrado");
+      }
+      Project project = optionalProject.get();
+
+      User currentUser = (User) authentication.getPrincipal();
+
+      if(!project.getOwner().getId().equals(currentUser.getId())){
+         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Você não tem permissão para adicionar tarefas a este projeto.");
+      }
+
+      Task newTask = new Task();
+      newTask.setDescription(taskDTO.getDescription());
+      newTask.setDueDate(taskDTO.getDueDate());
+      newTask.setProject(project); // Associa a tarefa ao projeto correto
+      newTask.setCompleted(false); // Define o status inicial
+
+      Task savedTask = taskRepository.save(newTask);
+
+      return ResponseEntity.status(HttpStatus.CREATED).body(savedTask);
+
    }
 }
