@@ -1,6 +1,7 @@
 package api_gestao_de_tarefas.entity;
 
 import api_gestao_de_tarefas.entity.User.User;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class Project {
    private User owner;
 
    // Relacionamento com tasks
+   @JsonManagedReference
    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
    private List<Task> tasks;
 
@@ -48,6 +50,10 @@ public class Project {
 
    public void setTasks(List<Task> tasks) {
       this.tasks = tasks;
+   }
+
+   public User getOwner() {
+      return owner;
    }
 
    public void setOwner(User owner) {

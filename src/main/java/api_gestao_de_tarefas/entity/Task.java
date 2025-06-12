@@ -1,6 +1,9 @@
 package api_gestao_de_tarefas.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "tasks")
@@ -12,6 +15,7 @@ public class Task {
 
    @ManyToOne
    @JoinColumn(name = "project_id", nullable = false)
+   @JsonBackReference
    private Project project;
 
    @Column(nullable = false)
@@ -22,6 +26,8 @@ public class Task {
 
    @Column(nullable = false)
    private boolean completed;
+
+   private LocalDate dueDate;
 
    public Long getId() {
       return id;
@@ -61,5 +67,9 @@ public class Task {
 
    public void setCompleted(boolean completed) {
       this.completed = completed;
+   }
+
+   public void setDueDate(LocalDate dueDate) {
+      this.dueDate = dueDate;
    }
 }

@@ -67,11 +67,12 @@ public class ProjectController {
    @PostMapping("/{projectId}/tasks")
    public ResponseEntity<?> createTaskForProject(@PathVariable Long projectId, @RequestBody @Valid TaskDTO taskDTO, Authentication authentication){
       Optional<Project> optionalProject = projectRepository.findById(projectId);
+
       if(optionalProject.isEmpty()){
          return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Projeto não encontrado");
       }
-      Project project = optionalProject.get();
 
+      Project project = optionalProject.get();
       User currentUser = (User) authentication.getPrincipal();
 
       if(!project.getOwner().getId().equals(currentUser.getId())){
@@ -79,6 +80,7 @@ public class ProjectController {
       }
 
       Task newTask = new Task();
+      newTask.setTitle(TaskDTO.getTitle());
       newTask.setDescription(taskDTO.getDescription());
       newTask.setDueDate(taskDTO.getDueDate());
       newTask.setProject(project); // Associa a tarefa ao projeto correto
