@@ -43,9 +43,9 @@ public class ProjectController {
       return ResponseEntity.ok(savedProject);
    }
 
-   @GetMapping("/viewall")
+   @GetMapping("/viewAll")
    public List<Project> getAllProjects() {
-      return projectRepository.findAll();
+      return projectRepository.findAllWithTasks();
    }
 
    //Busca projeto por ID
